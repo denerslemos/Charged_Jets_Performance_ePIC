@@ -141,7 +141,6 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 		}
 		
 		numRecoJetsNoElecEventHist->Fill(numRecoJetsNoElec);
-		numRecoJetsNoElecMCPEventHist->Fill(numRecoJetsNoElecMC);
 		
 		// Analyze Gen Jets
 	    int numGenJetsNoElec = 0;
@@ -158,7 +157,6 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 	    	double GenJetM  = (*JetGenM)[igjet];		
 		    double GenJet[5] = {GenJetPt, GenJetEta, GenJetPhi, GenJetM, GenJetE};
 	    	mHistJetGen->Fill(GenJet);
-	    	numGenJets++;
 			
 			// -> Check for electrons
 			// Loop over jet constituents (particles within the jet)

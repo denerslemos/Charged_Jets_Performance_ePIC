@@ -38,10 +38,10 @@ THnSparseD *mHistJetMatch = new THnSparseD("mHistJetMatch", "mHistJetMatch", NJe
 THnSparseD *mHistJetUnMatch = new THnSparseD("mHistJetUnMatch", "mHistJetUnMatch", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetUnMatch->Sumw2();
 THnSparseD *mHistJetGen = new THnSparseD("mHistJetGen", "mHistJetGen", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetGen->Sumw2();
 // no Electron
-THnSparseD *mHistJetRecoNoElec = new THnSparseD("mHistJetRecoNoElec", "mHistJetRecoNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetReco_noE->Sumw2();
-THnSparseD *mHistJetMatchNoElec = new THnSparseD("mHistJetMatchNoElec", "mHistJetMatchNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetMatch_noE->Sumw2();
-THnSparseD *mHistJetUnMatchNoElec = new THnSparseD("mHistJetUnMatchNoElec", "mHistJetUnMatchNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetUnMatch_noE->Sumw2();
-THnSparseD *mHistJetGenNoElec = new THnSparseD("mHistJetGenNoElec", "mHistJetGenNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetGen_noE->Sumw2();
+THnSparseD *mHistJetRecoNoElec = new THnSparseD("mHistJetRecoNoElec", "mHistJetRecoNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetRecoNoElec->Sumw2();
+THnSparseD *mHistJetMatchNoElec = new THnSparseD("mHistJetMatchNoElec", "mHistJetMatchNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetMatchNoElec->Sumw2();
+THnSparseD *mHistJetUnMatchNoElec = new THnSparseD("mHistJetUnMatchNoElec", "mHistJetUnMatchNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetUnMatchNoElec->Sumw2();
+THnSparseD *mHistJetGenNoElec = new THnSparseD("mHistJetGenNoElec", "mHistJetGenNoElec", NJetAxis, JetBins, JetXmin, JetXmax); mHistJetGenNoElec->Sumw2();
 
 void WriteHistos(){
 
