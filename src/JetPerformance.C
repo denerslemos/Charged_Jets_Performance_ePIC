@@ -38,12 +38,12 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 	
 		NEvents->Fill(1);
 	    if(NEVENTS%50000 == 0) cout << "Events Processed: " << NEVENTS << endl;
-/*
+
 	    // Analyze Reconstructed Jets
 		int numRecoJetsNoElec = 0;
-		int numRecoJetsSingleParticle = 0;
 		numRecoJetsEventHist->Fill(JetRecoType->GetSize());
 		for(unsigned int ijet = 0; ijet < JetRecoType->GetSize(); ijet++) {
+			// Make 4-vector
 			LorentzVector JetReco((*JetRecoPx)[ijet], (*JetRecoPy)[ijet], (*JetRecoPz)[ijet], (*JetRecoE)[ijet]);
     		double RecoJetEta = JetReco.Eta();
     		double RecoJetPhi = JetReco.Phi();
@@ -52,21 +52,17 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 	    	double RecoJetM  = (*JetRecoM)[ijet];
 	    	
 	    	double RecoJet[5] = {RecoJetPt, RecoJetEta, RecoJetPhi, RecoJetM, RecoJetE};
-	    	mHistJetReco->Fill(RecoJet);
-	    	DijetReco.push_back(JetReco); // fill histogram for dijet studies	
+	    	mHistJetReco->Fill(RecoJet); // all jets
 
 			// Check if Jet Contains an Electron - Use Particle Matching to Find True PID
-			bool noElectron = true;
-			bool noElectronMC = true;
-			double cesum = 0.0;
-
+			bool hasElectron = false;
 			for(unsigned int icjet = (*JetRecoCBegin)[ijet]; icjet < (*JetRecoCEnd)[ijet]; icjet++) {// Loop over jet constituents (particles within the jet)
-				// find electron in a jet
-				if((*TrkRecoPDG)[(*JetRecoCIdx)[icjet]] == 11) noElectron = false;
+
+				// Find electron in a jet
 			    int elecIndex = -1;
 			    double elecIndexWeight = -1.0;
 		   		int chargePartIndex = (*JetRecoCIdx)[icjet]; // ReconstructedChargedParticle Index for m'th Jet Component
-		    	for(unsigned int itrkass=0; itrkass < TrkPartAssocRec->GetSize(); itrkass++){ // Loop Over All ReconstructedChargedParticleAssociations
+		    	for(unsigned int itrkass = 0; itrkass < TrkPartAssocRec->GetSize(); itrkass++){ // Loop Over All ReconstructedChargedParticleAssociations
 					if((*TrkPartAssocRec)[itrkass] == chargePartIndex){ // Select Entry Matching the ReconstructedChargedParticle Index
 					    if((*TrkPartAssocWeight)[itrkass] > elecIndexWeight){ // Find Particle with Greatest Weight = Contributed Most Hits to Track
 							elecIndex = (*TrkPartAssocSim)[itrkass]; // Get Index of MCParticle Associated with ReconstructedChargedParticle
@@ -74,29 +70,11 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 			      		}
 			  		}
 		      	}
-				if((*TrkMCGenPDG)[elecIndex] == 11) noElectronMC = false;
-
-				LorentzVector TrkReco((*TrkRecoPx)[(*JetRecoCIdx)[icjet]], (*TrkRecoPy)[(*JetRecoCIdx)[icjet]], (*TrkRecoPz)[(*JetRecoCIdx)[icjet]], (*TrkRecoE)[(*JetRecoCIdx)[icjet]]);				
-	  			// not looking at PID yet
-				double RecoTrk[3] = {TrkReco.Pt(), TrkReco.Eta(), TrkReco.Phi()};	  	
-				cesum += (*TrkRecoE)[(*JetRecoCIdx)[icjet]];		
-				double zFrag[3] = {TrkReco.Pt()/RecoJetPt, RecoJetEta, RecoJetPt};
-				if(RecoJetPt > 5.0 && fabs(RecoJetEta) < 3.0){
-					mHistTrkConstReco->Fill(RecoTrk);		
-					if(noElectron) mHistTrkConstReco_noE->Fill(RecoTrk);	
-					if(noElectronMC) mHistTrkConstReco_noEMCP->Fill(RecoTrk);	
-					mHistFrgConstReco->Fill(zFrag);
-					if(noElectron) mHistFrgConstReco_noE->Fill(zFrag);
-					if(noElectronMC) mHistFrgConstReco_noEMCP->Fill(zFrag);		
-			
-				}
+				if((*TrkMCGenPDG)[elecIndex] == 11) hasElectron = true;
 
 	  		}
-	  		
-//	  		if(TMath::Abs(cesum - RecoJetE) > 0.000001) { cout << "bad histos" << endl;}
-	
-			if(noElectron){ mHistJetReco_noE->Fill(RecoJet); numRecoJetsNoElec++; DijetReco_noE.push_back(JetReco); }
-			if(noElectronMC){ mHistJetReco_noEMCP->Fill(RecoJet); numRecoJetsNoElecMC++; DijetReco_noEMC.push_back(JetReco); }
+	  			
+			if(!hasElectron){ mHistJetRecoNoElec->Fill(RecoJet); numRecoJetsNoElec++; }
 			
 			// Reco-Gen matched
 		    double minDR = 999.;
@@ -109,7 +87,7 @@ void JetPerformance(TString InputFileList, TString OutputFile){
        			double dPhi = TVector2::Phi_mpi_pi(RecoJetPhi - GenJetPhi);  // handles wraparound
 				double dR = std::sqrt(dEta * dEta + dPhi * dPhi);
 				JetdR->Fill(dR);
-		        if (dR < minDR) {
+		        if (dR < minDR) { // closest dR
         		    minDR = dR;
             		matchedGenIdx = jjet;
         		}
@@ -119,19 +97,45 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 				LorentzVector JetGen((*JetGenPx)[matchedGenIdx], (*JetGenPy)[matchedGenIdx], (*JetGenPz)[matchedGenIdx], (*JetGenE)[matchedGenIdx]);
 				double GenJetPt = JetGen.Pt();
 				double GenJetE = JetGen.E();
-				double resolutionpT = RecoJetPt/GenJetPt;
-				double resolutionE = RecoJetE/GenJetE;
-				double JESJERvspT[3] = {resolutionpT, GenJetPt, RecoJetEta};
+				double GenJetMass = JetGen.M();
+				double GenJetPhi = JetGen.Phi();
+				double GenJetEta = JetGen.Eta();
+
+				double resolutionpT = (RecoJetPt - GenJetPt)/GenJetPt;
+				double resolutionE = (RecoJetE- GenJetE)/GenJetE;
+				double resolutionM = (RecoJetM - GenJetMass)/GenJetMass;
+				double resolutionPhi = TVector2::Phi_mpi_pi(RecoJetPhi - GenJetPhi);
+				double resolutionEta = (RecoJetEta - GenJetEta);
+				double resolutiondR = sqrt(resolutionEta*resolutionEta + resolutionPhi*resolutionPhi);
+
+				double JESJERvspT[2] = {resolutionpT, GenJetPt};
+				double JESJERvsE[2] = {resolutionE, GenJetE};
+				double JESJERvsM[2] = {resolutionM, GenJetPt}; // as function of pT
+				double JESJERvsPhi[2] = {resolutionPhi, GenJetPt}; // as function of pT
+				double JESJERvsEta[2] = {resolutionEta, GenJetPt}; // as function of pT
+				double JESJERvsdR[2] = {resolutiondR, GenJetPt}; // as function of pT
+
 				mHistJESJERvsPt->Fill(JESJERvspT);
-				double JESJERvsE[3] = {resolutionE, GenJetPt, RecoJetEta};
 				mHistJESJERvsE->Fill(JESJERvsE);
+				mHistJESJERvsM->Fill(JESJERvsM);
+				mHistJESJERvsPhi->Fill(JESJERvsPhi);
+				mHistJESJERvsEta->Fill(JESJERvsEta);
+				mHistJESJERvsdR->Fill(JESJERvsdR);
+
 				mHistJetMatch->Fill(RecoJet);
-				if(noElectron){ mHistJetMatch_noE->Fill(RecoJet); mHistJESJERvsPt_noE->Fill(JESJERvspT); mHistJESJERvsE_noE->Fill(JESJERvsE);}
-				if(noElectronMC){ mHistJetMatch_noEMCP->Fill(RecoJet); mHistJESJERvsPt_noEMCP->Fill(JESJERvspT); mHistJESJERvsE_noEMCP->Fill(JESJERvsE); }
-			}else {
+				if(!hasElectron){ 
+					mHistJetMatchNoElec->Fill(RecoJet); 
+					mHistJESJERvsPtNoElec->Fill(JESJERvspT);
+					mHistJESJERvsENoElec->Fill(JESJERvsE);
+					mHistJESJERvsMNoElec->Fill(JESJERvsM);
+					mHistJESJERvsPhiNoElec->Fill(JESJERvsPhi);
+					mHistJESJERvsEtaNoElec->Fill(JESJERvsEta);
+					mHistJESJERvsdRNoElec->Fill(JESJERvsdR);
+				}
+
+			} else {
 				mHistJetUnMatch->Fill(RecoJet);		
-				if(noElectron){ mHistJetUnMatch_noE->Fill(RecoJet); }
-				if(noElectronMC){ mHistJetUnMatch_noEMCP->Fill(RecoJet); }		
+				if(!hasElectron){ mHistJetUnMatchNoElec->Fill(RecoJet); }		
 			}
     		
 		}
@@ -139,10 +143,13 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 		numRecoJetsNoElecEventHist->Fill(numRecoJetsNoElec);
 		numRecoJetsNoElecMCPEventHist->Fill(numRecoJetsNoElecMC);
 		
-		// Analyze Generator Jets
+		// Analyze Gen Jets
 	    int numGenJetsNoElec = 0;
     	numGenJetsEventHist->Fill(JetGenType->GetSize());		
+		bool hasGenElectron = false;
+		
 		for(unsigned int igjet = 0; igjet < JetGenType->GetSize(); igjet++) {
+
 			LorentzVector JetGen((*JetGenPx)[igjet], (*JetGenPy)[igjet], (*JetGenPz)[igjet], (*JetGenE)[igjet]);
     		double GenJetEta = JetGen.Eta();
     		double GenJetPhi = JetGen.Phi();
@@ -150,41 +157,22 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 	    	double GenJetE  = JetGen.E();
 	    	double GenJetM  = (*JetGenM)[igjet];		
 		    double GenJet[5] = {GenJetPt, GenJetEta, GenJetPhi, GenJetM, GenJetE};
-	    	mHistJetGen->Fill(GenJet);			
-
-			double cesumG = 0.0;
-			bool noGenElectron = true;
+	    	mHistJetGen->Fill(GenJet);
+	    	numGenJets++;
 			
-			for(unsigned int icgjet = (*JetGenCBegin)[igjet]; icgjet < (*JetGenCEnd)[igjet]; icgjet++) { // Loop over jet constituents (particles within the jet)
-
-				double gTrkPx = (*TrkGenPx)[(*JetGenCIdx)[igjet]];
-				double gTrkPy = (*TrkGenPy)[(*JetGenCIdx)[igjet]];
-				double gTrkPz = (*TrkGenPz)[(*JetGenCIdx)[igjet]];
-				double gTrkM = (*TrkGenM)[(*JetGenCIdx)[igjet]];
-				int gTrkPDG = (*TrkGenPDG)[(*JetGenCIdx)[igjet]];
-	    		double gTrkE = TMath::Sqrt(gTrkPx*gTrkPx + gTrkPy*gTrkPy + gTrkPz*gTrkPz + gTrkM*gTrkM);
-	    		
-	    		cesumG += gTrkE;
-			    if(gTrkPDG == 11) noGenElectron = false;
-
-				LorentzVector TrkGen(gTrkPx, gTrkPy, gTrkPz, gTrkE);				
-	  			// not looking at PID yet
-				double GenTrk[3] = {TrkGen.Pt(), TrkGen.Eta(), TrkGen.Phi()};	  			
-				double zFrag[3] = {TrkGen.Pt()/GenJetPt, GenJetEta, GenJetPt};
-				if(GenJetPt > 5.0 && fabs(GenJetEta) < 3.0){ 
-					mHistTrkConstGen->Fill(GenTrk);		
-					if(noGenElectron) mHistTrkConstGen_noE->Fill(GenTrk);	
-					mHistFrgConstGen->Fill(zFrag); 
-					if(noGenElectron) mHistFrgConstGen_noE->Fill(zFrag); 
-				}						
+			// -> Check for electrons
+			// Loop over jet constituents (particles within the jet)
+			for(unsigned int icgjet = (*JetGenCBegin)[igjet]; icgjet < (*JetGenCEnd)[igjet]; icgjet++) { 
+				int gTrkPDG = (*TrkGenPDG)[(*JetGenCIdx)[igjet]];	    		
+			    if(gTrkPDG == 11) hasGenElectron = true;					
 			}
 
-			if(noGenElectron){ mHistJetGen_noE->Fill(GenJet); numGenJetsNoElec++; }
+			if(!hasGenElectron){ mHistJetGenNoElec->Fill(GenJet); numGenJetsNoElec++; }
 			
 		}
 				
 		numGenJetsNoElecEventHist->Fill(numGenJetsNoElec);
-*/
+
 		NEVENTS++;
 		
 	}
