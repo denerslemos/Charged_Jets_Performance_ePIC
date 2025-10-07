@@ -102,7 +102,7 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 				double GenJetEta = JetGen.Eta();
 
 				double resolutionpT = (RecoJetPt - GenJetPt)/GenJetPt;
-				double resolutionE = (RecoJetE- GenJetE)/GenJetE;
+				double resolutionE = (RecoJetE - GenJetE)/GenJetE;
 				double resolutionM = (RecoJetM - GenJetMass)/GenJetMass;
 				double resolutionPhi = TVector2::Phi_mpi_pi(RecoJetPhi - GenJetPhi);
 				double resolutionEta = (RecoJetEta - GenJetEta);
@@ -161,7 +161,7 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 			// -> Check for electrons
 			// Loop over jet constituents (particles within the jet)
 			for(unsigned int icgjet = (*JetGenCBegin)[igjet]; icgjet < (*JetGenCEnd)[igjet]; icgjet++) { 
-				int gTrkPDG = (*TrkGenPDG)[(*JetGenCIdx)[igjet]];	    		
+				int gTrkPDG = (*TrkGenPDG)[(*JetGenCIdx)[icgjet]];	    		
 			    if(gTrkPDG == 11) hasGenElectron = true;					
 			}
 
@@ -176,7 +176,7 @@ void JetPerformance(TString InputFileList, TString OutputFile){
 	}
 	cout << "Total number of events: " << NEVENTS << endl;
 	
-	//WriteHistos();
+	WriteHistos();
 	
 	OutFile->Close();
 	
